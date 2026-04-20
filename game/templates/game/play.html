@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Play - GuesKing</title>
+{% load static %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Space Mono", monospace;
+    background-image: url("/static/images/mt.jpg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(4, 6, 16, 0.82);
+    backdrop-filter: blur(3px);
+    z-index: 0;
+}
+
+/* HEADER */
+header {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 48px;
+    border-bottom: 1px solid rgba(124, 108, 255, 0.2);
+    background: rgba(4, 6, 16, 0.5);
+    flex-shrink: 0;
+}
+
+.logo {
+    font-family: "Syne", sans-serif;
+    font-size: 22px; font-weight: 800;
+    letter-spacing: 5px; color: #7c6cff;
+    text-shadow: 0 0 20px rgba(124, 108, 255, 0.5);
+}
+
+.header-right {
+    display: flex; align-items: center; gap: 20px;
+}
+
+.diff-badge {
+    padding: 4px 12px; border-radius: 20px;
+    border: 1px solid #7c6cff; color: #7c6cff;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+
+.attempts-label {
+    font-size: 12px; color: #64748b; letter-spacing: 1px;
+}
+
+.attempts-label span {
+    color: #e5e7eb; font-size: 16px; font-weight: 700;
+    font-family: "Syne", sans-serif;
+}
+
+/* MAIN 3-COL */
+.main {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr 240px;
+    overflow: hidden;
+}
+
+/* SIDE PANELS */
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 24px;
+    gap: 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.side-panel.right {
+    border-right: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.panel-label {
+    font-size: 9px; letter-spacing: 3px;
+    text-transform: uppercase; color: #374151;
+    margin-bottom: 8px;
+}
+
+/* Guess history in left panel */
+.history-row {
+    display: flex; gap: 5px; align-items: center;
+}
+
+.h-tile {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Syne", sans-serif;
+    font-size: 13px; font-weight: 800;
+    border-radius: 4px;
+    text-transform: uppercase; color: #fff;
+}
+
+.h-tile.correct { background: #16a34a; }
+.h-tile.present { background: #ca8a04; }
+.h-tile.absent  { background: #374151; color: #6b7280; }
+.h-tile.empty-h { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+
+/* Attempt dots */
+.attempt-dots {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
+}
+
+.attempt-dot {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: #475569;
+}
+
+.dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); flex-shrink: 0;
+}
+
+.dot.used    { background: #374151; }
+.dot.current { background: #7c6cff; box-shadow: 0 0 6px rgba(124,108,255,0.6); }
+.dot.left    { background: rgba(255,255,255,0.15); }
+
+/* RIGHT PANEL: color legend */
+.legend-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+
+.legend-tile {
+    width: 34px; height: 34px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Syne", sans-serif;
+    font-size: 15px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+}
+
+.legend-tile.correct { background: #16a34a; }
+.legend-tile.present { background: #ca8a04; }
+.legend-tile.absent  { background: #374151; }
+
+.legend-desc {
+    font-size: 10px; color: #94a3b8;
+    letter-spacing: 0.3px; line-height: 1.5;
+}
+
+.score-box {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(0, 230, 195, 0.04);
+    border: 1px solid rgba(0, 230, 195, 0.12);
+    border-radius: 8px;
+    font-size: 10px; color: #64748b; line-height: 2;
+    text-align: center;
+}
+
+.score-box strong { color: #00e6c3; display: block; font-size: 13px; }
+
+/* CENTER */
+.center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+}
+
+/* Grid */
+.grid { display: flex; flex-direction: column; gap: 5px; }
+.grid-row { display: flex; gap: 5px; }
+
+.tile {
+    width: 54px; height: 54px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Syne", sans-serif;
+    font-size: 22px; font-weight: 800;
+    border-radius: 6px;
+    border: 2px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.03);
+    color: #e5e7eb; text-transform: uppercase;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.tile.correct      { background: #16a34a; border-color: #16a34a; color: #fff; }
+.tile.present      { background: #ca8a04; border-color: #ca8a04; color: #fff; }
+.tile.absent       { background: #374151; border-color: #374151; color: #9ca3af; }
+.tile.empty        { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); }
+.tile.active-empty { border-color: rgba(124,108,255,0.4); }
+.tile.active-filled{ border-color: #7c6cff; background: rgba(124,108,255,0.08); }
+
+/* Input */
+.input-row {
+    display: flex; align-items: center; gap: 10px;
+}
+
+.guess-input {
+    width: 190px; padding: 10px 14px;
+    font-family: "Space Mono", monospace;
+    font-size: 20px; font-weight: 700;
+    text-align: center; letter-spacing: 8px; text-transform: uppercase;
+    background: #0d1117; color: #e5e7eb;
+    border: 2px solid rgba(124,108,255,0.4);
+    border-radius: 8px; outline: none;
+    transition: border-color 0.2s;
+}
+
+.guess-input:focus { border-color: #00e6c3; }
+
+.guess-btn {
+    padding: 10px 20px;
+    font-family: "Space Mono", monospace;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(135deg, #7c6cff, #00e6c3);
+    color: #fff; border: none; border-radius: 8px;
+    cursor: pointer; transition: 0.2s;
+}
+
+.guess-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(124,108,255,0.4);
+}
+
+.error-msg {
+    color: #f87171; font-size: 11px; letter-spacing: 1px;
+    padding: 5px 12px; border-radius: 6px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.2);
+}
+
+/* Keyboard */
+.keyboard { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.kb-row   { display: flex; gap: 4px; }
+
+.kb-key {
+    min-width: 34px; height: 42px; padding: 0 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Space Mono", monospace;
+    font-size: 12px; font-weight: 700;
+    border-radius: 5px; cursor: pointer; border: none;
+    background: rgba(255,255,255,0.09); color: #e5e7eb;
+    transition: 0.15s; user-select: none;
+}
+
+.kb-key:hover  { background: rgba(255,255,255,0.18); }
+.kb-key.wide   { min-width: 50px; font-size: 10px; letter-spacing: 1px; }
+.kb-key.correct{ background: #16a34a; color: #fff; }
+.kb-key.present{ background: #ca8a04; color: #fff; }
+.kb-key.absent { background: #374151; color: #6b7280; }
+
+/* MEMORIZE OVERLAY */
+#memorize-screen {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(4, 6, 16, 0.97);
+    gap: 14px;
+}
+
+.mem-label {
+    font-size: 10px; letter-spacing: 5px;
+    color: #475569; text-transform: uppercase; margin-bottom: 10px;
+}
+
+.mem-word {
+    font-family: "Syne", sans-serif;
+    font-size: 44px; font-weight: 800;
+    letter-spacing: 14px; color: #7c6cff;
+    text-shadow: 0 0 28px rgba(124,108,255,0.5);
+    text-transform: uppercase;
+}
+
+.mem-bar-wrap {
+    width: 200px; height: 3px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px; margin-top: 20px;
+}
+
+.mem-bar {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #7c6cff, #00e6c3);
+    animation: shrink linear forwards;
+}
+
+@keyframes shrink { from { width: 100%; } to { width: 0%; } }
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+
+{% if show_preview %}
+<div id="memorize-screen" data-ms="{{ preview_time }}">
+    <div class="mem-label">Memorize — then it disappears!</div>
+    {% for word in word_list %}
+    <div class="mem-word">{{ word|upper }}</div>
+    {% endfor %}
+    <div class="mem-bar-wrap">
+        <div class="mem-bar" id="memBar"></div>
+    </div>
+</div>
+{% endif %}
+
+<script type="application/json" id="feedback-data">
+[{% for row in feedback %}[{% for status, letter in row %}["{{ status }}","{{ letter }}"]{% if not forloop.last %},{% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
+<header>
+    <div class="logo">⌨ GUESSKING</div>
+    <div class="header-right">
+        <div class="diff-badge">{{ difficulty }}</div>
+        <div class="attempts-label"><span>{{ attempts }}</span> attempt{{ attempts|pluralize }} left</div>
+    </div>
+</header>
+
+<div class="main">
+
+    <!-- LEFT: attempt tracker + mini history -->
+    <div class="side-panel">
+        <div class="panel-label">Guess History</div>
+
+        {% for row in feedback %}
+        <div class="history-row">
+            {% for status, letter in row %}
+            <div class="h-tile {{ status }}">{{ letter|upper }}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        {% if attempts > 0 %}
+        <div class="history-row" style="opacity:0.4;">
+            <div class="h-tile empty-h"></div>
+            <div class="h-tile empty-h"></div>
+            <div class="h-tile empty-h"></div>
+            <div class="h-tile empty-h"></div>
+            <div class="h-tile empty-h"></div>
+        </div>
+        {% endif %}
+
+        <div class="panel-label" style="margin-top:16px;">Attempts Left</div>
+        <div class="attempt-dots">
+            {% for row in feedback %}
+            <div class="attempt-dot"><div class="dot used"></div></div>
+            {% endfor %}
+            {% if attempts > 0 %}
+            <div class="attempt-dot"><div class="dot current"></div></div>
+            {% endif %}
+            {% for row in empty_rows %}
+            {% if not forloop.first or attempts == 0 %}
+            <div class="attempt-dot"><div class="dot left"></div></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- CENTER: grid + input + keyboard -->
+    <div class="center">
+
+        <div class="grid">
+            {% for row in feedback %}
+            <div class="grid-row">
+                {% for status, letter in row %}
+                <div class="tile {{ status }}">{{ letter|upper }}</div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            {% if attempts > 0 %}
+            <div class="grid-row" id="active-row">
+                <div class="tile active-empty" id="t0"></div>
+                <div class="tile active-empty" id="t1"></div>
+                <div class="tile active-empty" id="t2"></div>
+                <div class="tile active-empty" id="t3"></div>
+                <div class="tile active-empty" id="t4"></div>
+            </div>
+            {% endif %}
+
+            {% for row in empty_rows %}
+            {% if not forloop.first or attempts == 0 %}
+            <div class="grid-row">
+                <div class="tile empty"></div>
+                <div class="tile empty"></div>
+                <div class="tile empty"></div>
+                <div class="tile empty"></div>
+                <div class="tile empty"></div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        {% if attempts > 0 %}
+        <form method="post" id="guess-form" class="input-row">
+            {% csrf_token %}
+            <input class="guess-input" type="text" name="guess" id="guessInput"
+                   maxlength="5" autocomplete="off" autocorrect="off"
+                   spellcheck="false" autofocus placeholder="- - - - -">
+            <button class="guess-btn" type="submit">Enter</button>
+        </form>
+        {% endif %}
+
+        <div class="keyboard">
+            <div class="kb-row">
+                <button class="kb-key" data-key="Q">Q</button>
+                <button class="kb-key" data-key="W">W</button>
+                <button class="kb-key" data-key="E">E</button>
+                <button class="kb-key" data-key="R">R</button>
+                <button class="kb-key" data-key="T">T</button>
+                <button class="kb-key" data-key="Y">Y</button>
+                <button class="kb-key" data-key="U">U</button>
+                <button class="kb-key" data-key="I">I</button>
+                <button class="kb-key" data-key="O">O</button>
+                <button class="kb-key" data-key="P">P</button>
+            </div>
+            <div class="kb-row">
+                <button class="kb-key" data-key="A">A</button>
+                <button class="kb-key" data-key="S">S</button>
+                <button class="kb-key" data-key="D">D</button>
+                <button class="kb-key" data-key="F">F</button>
+                <button class="kb-key" data-key="G">G</button>
+                <button class="kb-key" data-key="H">H</button>
+                <button class="kb-key" data-key="J">J</button>
+                <button class="kb-key" data-key="K">K</button>
+                <button class="kb-key" data-key="L">L</button>
+            </div>
+            <div class="kb-row">
+                <button class="kb-key wide" data-key="ENTER">Enter</button>
+                <button class="kb-key" data-key="Z">Z</button>
+                <button class="kb-key" data-key="X">X</button>
+                <button class="kb-key" data-key="C">C</button>
+                <button class="kb-key" data-key="V">V</button>
+                <button class="kb-key" data-key="B">B</button>
+                <button class="kb-key" data-key="N">N</button>
+                <button class="kb-key" data-key="M">M</button>
+                <button class="kb-key wide" data-key="BACK">Del</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: color guide + score -->
+    <div class="side-panel right">
+        <div class="panel-label">Color Guide</div>
+
+        <div class="legend-item">
+            <div class="legend-tile correct">A</div>
+            <div class="legend-desc">Correct letter,<br>correct spot</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-tile present">B</div>
+            <div class="legend-desc">Right letter,<br>wrong spot</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-tile absent">C</div>
+            <div class="legend-desc">Not in<br>the word</div>
+        </div>
+
+        <div class="score-box">
+            <strong>Score Formula</strong>
+            attempts left<br>× 10 × {{ multiplier }}
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Memorize timer
+var memScreen = document.getElementById('memorize-screen');
+if (memScreen) {
+    var ms = parseInt(memScreen.getAttribute('data-ms') || '2500', 10);
+    var bar = document.getElementById('memBar');
+    if (bar) { bar.style.animationDuration = ms + 'ms'; }
+    setTimeout(function () { memScreen.style.display = 'none'; }, ms);
+}
+
+// Keyboard coloring
+var letterStatus = {};
+var feedbackEl = document.getElementById('feedback-data');
+var feedbackData = [];
+if (feedbackEl) {
+    try { feedbackData = JSON.parse(feedbackEl.textContent.trim()); } catch (e) {}
+}
+
+var priority = { correct: 3, present: 2, absent: 1 };
+feedbackData.forEach(function (row) {
+    row.forEach(function (pair) {
+        var st = pair[0], lt = pair[1].toUpperCase();
+        if (!letterStatus[lt] || priority[st] > priority[letterStatus[lt]]) {
+            letterStatus[lt] = st;
+        }
+    });
+});
+
+document.querySelectorAll('.kb-key').forEach(function (btn) {
+    var k = btn.getAttribute('data-key');
+    if (k && letterStatus[k]) { btn.classList.add(letterStatus[k]); }
+});
+
+// Live tile preview
+var input = document.getElementById('guessInput');
+if (input) {
+    input.addEventListener('input', function () {
+        var val = this.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
+        this.value = val.toLowerCase();
+        for (var i = 0; i < 5; i++) {
+            var tile = document.getElementById('t' + i);
+            if (tile) {
+                tile.textContent = val[i] || '';
+                tile.className = 'tile ' + (val[i] ? 'active-filled' : 'active-empty');
+            }
+        }
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            var form = document.getElementById('guess-form');
+            if (form) { form.submit(); }
+        }
+    });
+}
+
+// On-screen keyboard
+document.querySelectorAll('.kb-key').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var k = this.getAttribute('data-key');
+        if (k === 'ENTER') {
+            var form = document.getElementById('guess-form');
+            if (form) { form.submit(); }
+        } else if (k === 'BACK') {
+            if (input) {
+                input.value = input.value.slice(0, -1);
+                input.dispatchEvent(new Event('input'));
+            }
+        } else {
+            if (input && input.value.length < 5) {
+                input.value += k.toLowerCase();
+                input.dispatchEvent(new Event('input'));
+            }
+        }
+    });
+});
+</script>
+</body>
+</html>

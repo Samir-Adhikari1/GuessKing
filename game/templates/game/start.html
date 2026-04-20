@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GuesKing</title>
+{% load static %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Space Mono", monospace;
+    background-image: url("/static/images/mt.jpg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(4, 6, 16, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 0;
+}
+
+header {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 48px;
+    border-bottom: 1px solid rgba(124, 108, 255, 0.2);
+    background: rgba(4, 6, 16, 0.5);
+    flex-shrink: 0;
+}
+
+.logo {
+    font-family: "Syne", sans-serif;
+    font-size: 22px; font-weight: 800;
+    letter-spacing: 5px; color: #7c6cff;
+    text-shadow: 0 0 20px rgba(124, 108, 255, 0.5);
+}
+
+.header-hint {
+    font-size: 11px; color: #475569; letter-spacing: 2px;
+}
+
+.main {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 480px 1fr;
+    align-items: center;
+}
+
+/* Left decorative panel */
+.deco-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 48px 40px;
+    gap: 14px;
+}
+
+.deco-word {
+    font-family: "Syne", sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 6px; text-transform: uppercase;
+    opacity: 0.12; color: #7c6cff;
+}
+
+.deco-word:nth-child(2) { opacity: 0.08; font-size: 11px; }
+.deco-word:nth-child(3) { opacity: 0.05; font-size: 10px; }
+
+/* Right decorative panel - tiles */
+.deco-tiles {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 40px;
+    gap: 8px;
+}
+
+.deco-row { display: flex; gap: 8px; }
+
+.deco-tile {
+    width: 32px; height: 32px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Syne", sans-serif;
+    font-size: 13px; font-weight: 800; color: #fff;
+    opacity: 0.25;
+}
+
+.deco-tile.g { background: #16a34a; }
+.deco-tile.y { background: #ca8a04; }
+.deco-tile.x { background: #374151; }
+
+/* CENTER CARD */
+.card {
+    background: rgba(8, 10, 22, 0.92);
+    border: 1px solid rgba(124, 108, 255, 0.3);
+    border-radius: 20px;
+    padding: 48px 44px;
+    box-shadow: 0 0 60px rgba(124, 108, 255, 0.12),
+                inset 0 0 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.card-title {
+    font-family: "Syne", sans-serif;
+    font-size: 36px; font-weight: 800;
+    letter-spacing: 4px; color: #7c6cff;
+    text-shadow: 0 0 24px rgba(124, 108, 255, 0.5);
+    margin-bottom: 6px;
+}
+
+.card-sub {
+    font-size: 11px; color: #475569;
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 40px;
+}
+
+.section-label {
+    font-size: 10px; color: #475569;
+    letter-spacing: 3px; text-transform: uppercase;
+    text-align: left; margin-bottom: 12px;
+}
+
+/* Difficulty grid */
+.diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 28px;
+}
+
+.diff-option { display: none; }
+
+.diff-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.02);
+    text-align: left;
+}
+
+.diff-label:hover {
+    border-color: rgba(124, 108, 255, 0.4);
+    background: rgba(124, 108, 255, 0.06);
+}
+
+.diff-option:checked + .diff-label {
+    background: rgba(124, 108, 255, 0.1);
+}
+
+.diff-icon { font-size: 18px; flex-shrink: 0; }
+
+.diff-info { flex: 1; }
+
+.diff-name {
+    font-family: "Syne", sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.diff-meta {
+    font-size: 9px; color: #64748b;
+    letter-spacing: 0.5px;
+}
+
+.diff-mult {
+    font-size: 11px; font-weight: 700;
+    opacity: 0.7;
+}
+
+/* Per-level accent colors */
+.c-easy      { color: #4ade80; }
+.c-medium    { color: #facc15; }
+.c-hard      { color: #fb923c; }
+.c-expert    { color: #f87171; }
+.c-master    { color: #c084fc; }
+.c-elite     { color: #60a5fa; }
+.c-legendary { color: #f472b6; }
+
+.diff-option:checked + .diff-label.easy      { border-color: #4ade80; }
+.diff-option:checked + .diff-label.medium    { border-color: #facc15; }
+.diff-option:checked + .diff-label.hard      { border-color: #fb923c; }
+.diff-option:checked + .diff-label.expert    { border-color: #f87171; }
+.diff-option:checked + .diff-label.master    { border-color: #c084fc; }
+.diff-option:checked + .diff-label.elite     { border-color: #60a5fa; }
+.diff-option:checked + .diff-label.legendary { border-color: #f472b6; }
+
+.start-btn {
+    width: 100%; padding: 14px;
+    font-family: "Space Mono", monospace;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(135deg, #7c6cff, #00e6c3);
+    color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; transition: 0.2s;
+}
+
+.start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(124, 108, 255, 0.4);
+}
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+
+<header>
+    <div class="logo">⌨ GUESSKING</div>
+    <div class="header-hint">5-Letter Tech Word Challenge</div>
+</header>
+
+<div class="main">
+
+    <!-- Left deco -->
+    <div class="deco-panel">
+        <div class="deco-word">Debug</div>
+        <div class="deco-word">Cache</div>
+        <div class="deco-word">Token</div>
+    </div>
+
+    <!-- Center card -->
+    <div class="card">
+        <div class="card-title">Select Difficulty</div>
+        <div class="card-sub">Choose your challenge level</div>
+
+        <form method="post">
+        {% csrf_token %}
+        <div class="section-label">Difficulty</div>
+        <div class="diff-grid">
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-easy" value="easy" checked>
+            <label class="diff-label easy" for="d-easy">
+                <span class="diff-icon">🌱</span>
+                <div class="diff-info">
+                    <div class="diff-name c-easy">Easy</div>
+                    <div class="diff-meta">8 attempts · 3s preview</div>
+                </div>
+                <span class="diff-mult c-easy">×1</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-medium" value="medium">
+            <label class="diff-label medium" for="d-medium">
+                <span class="diff-icon">⚡</span>
+                <div class="diff-info">
+                    <div class="diff-name c-medium">Medium</div>
+                    <div class="diff-meta">7 attempts · 2.5s preview</div>
+                </div>
+                <span class="diff-mult c-medium">×2</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-hard" value="hard">
+            <label class="diff-label hard" for="d-hard">
+                <span class="diff-icon">🔥</span>
+                <div class="diff-info">
+                    <div class="diff-name c-hard">Hard</div>
+                    <div class="diff-meta">6 attempts · 2s preview</div>
+                </div>
+                <span class="diff-mult c-hard">×3</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-expert" value="expert">
+            <label class="diff-label expert" for="d-expert">
+                <span class="diff-icon">💀</span>
+                <div class="diff-info">
+                    <div class="diff-name c-expert">Expert</div>
+                    <div class="diff-meta">5 attempts · 1.5s preview</div>
+                </div>
+                <span class="diff-mult c-expert">×4</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-master" value="master">
+            <label class="diff-label master" for="d-master">
+                <span class="diff-icon">🧠</span>
+                <div class="diff-info">
+                    <div class="diff-name c-master">Master</div>
+                    <div class="diff-meta">5 attempts · 1s preview</div>
+                </div>
+                <span class="diff-mult c-master">×5</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-elite" value="elite">
+            <label class="diff-label elite" for="d-elite">
+                <span class="diff-icon">🛸</span>
+                <div class="diff-info">
+                    <div class="diff-name c-elite">Elite</div>
+                    <div class="diff-meta">4 attempts · 0.7s preview</div>
+                </div>
+                <span class="diff-mult c-elite">×7</span>
+            </label>
+
+            <input class="diff-option" type="radio" name="difficulty" id="d-legendary" value="legendary">
+            <label class="diff-label legendary" for="d-legendary">
+                <span class="diff-icon">☠️</span>
+                <div class="diff-info">
+                    <div class="diff-name c-legendary">Legendary</div>
+                    <div class="diff-meta">3 attempts · 0.5s preview</div>
+                </div>
+                <span class="diff-mult c-legendary">×10</span>
+            </label>
+
+        </div>
+        <button class="start-btn" type="submit">Start Game →</button>
+        </form>
+    </div>
+
+    <!-- Right deco tiles -->
+    <div class="deco-tiles">
+        <div class="deco-row">
+            <div class="deco-tile g">C</div>
+            <div class="deco-tile x">O</div>
+            <div class="deco-tile y">D</div>
+            <div class="deco-tile x">E</div>
+            <div class="deco-tile x">R</div>
+        </div>
+        <div class="deco-row">
+            <div class="deco-tile x">S</div>
+            <div class="deco-tile y">T</div>
+            <div class="deco-tile x">A</div>
+            <div class="deco-tile g">C</div>
+            <div class="deco-tile x">K</div>
+        </div>
+        <div class="deco-row">
+            <div class="deco-tile g">C</div>
+            <div class="deco-tile g">A</div>
+            <div class="deco-tile g">C</div>
+            <div class="deco-tile g">H</div>
+            <div class="deco-tile g">E</div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

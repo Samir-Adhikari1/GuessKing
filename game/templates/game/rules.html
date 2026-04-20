@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Rules - GuesKing</title>
+{% load static %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Space Mono", monospace;
+    background-image: url("/static/images/mt.jpg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(4, 6, 16, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 0;
+}
+
+header {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 48px;
+    border-bottom: 1px solid rgba(124, 108, 255, 0.2);
+    background: rgba(4, 6, 16, 0.5);
+    flex-shrink: 0;
+}
+
+.logo {
+    font-family: "Syne", sans-serif;
+    font-size: 22px; font-weight: 800;
+    letter-spacing: 5px; color: #7c6cff;
+    text-shadow: 0 0 20px rgba(124, 108, 255, 0.5);
+}
+
+.diff-badge {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1px solid #7c6cff; color: #7c6cff;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+}
+
+.main {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 680px 1fr;
+    align-items: center;
+}
+
+/* Side panels */
+.side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px;
+    gap: 20px;
+}
+
+.side-stat {
+    text-align: center;
+    padding: 20px;
+    background: rgba(124, 108, 255, 0.05);
+    border: 1px solid rgba(124, 108, 255, 0.12);
+    border-radius: 12px;
+}
+
+.side-stat-num {
+    font-family: "Syne", sans-serif;
+    font-size: 40px; font-weight: 800;
+    color: #7c6cff;
+    text-shadow: 0 0 16px rgba(124, 108, 255, 0.4);
+}
+
+.side-stat-label {
+    font-size: 10px; color: #64748b;
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-top: 6px;
+}
+
+/* CENTER CARD */
+.card {
+    background: rgba(8, 10, 22, 0.92);
+    border: 1px solid rgba(124, 108, 255, 0.3);
+    border-radius: 20px;
+    padding: 44px 52px;
+    box-shadow: 0 0 60px rgba(124, 108, 255, 0.12);
+}
+
+.card-title {
+    font-family: "Syne", sans-serif;
+    font-size: 28px; font-weight: 800;
+    letter-spacing: 4px; color: #7c6cff;
+    text-shadow: 0 0 20px rgba(124, 108, 255, 0.4);
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+/* Color guide */
+.color-guide {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.guide-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+}
+
+.guide-tile {
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Syne", sans-serif;
+    font-size: 22px; font-weight: 800; color: #fff;
+}
+
+.guide-tile.correct { background: #16a34a; }
+.guide-tile.present { background: #ca8a04; }
+.guide-tile.absent  { background: #374151; }
+
+.guide-label {
+    font-size: 10px; color: #94a3b8;
+    letter-spacing: 0.5px; text-align: center;
+    line-height: 1.5;
+}
+
+/* Rules list */
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 32px;
+}
+
+.rule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.rule-num {
+    font-family: "Syne", sans-serif;
+    font-size: 11px; font-weight: 700;
+    color: #7c6cff; opacity: 0.6;
+    flex-shrink: 0; width: 18px;
+    padding-top: 1px;
+}
+
+.rule-text {
+    font-size: 12px; color: #cbd5e1;
+    letter-spacing: 0.3px; line-height: 1.6;
+}
+
+.rule-text strong { color: #e5e7eb; }
+
+.start-btn {
+    display: block;
+    width: 100%; padding: 14px;
+    font-family: "Space Mono", monospace;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    text-decoration: none; text-align: center;
+    background: linear-gradient(135deg, #7c6cff, #00e6c3);
+    color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; transition: 0.2s;
+}
+
+.start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(124, 108, 255, 0.4);
+}
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+
+<header>
+    <div class="logo">⌨ GUESSKING</div>
+    <div class="diff-badge">{{ difficulty }} mode</div>
+</header>
+
+<div class="main">
+
+    <!-- Left stats -->
+    <div class="side">
+        <div class="side-stat">
+            <div class="side-stat-num">{{ attempts }}</div>
+            <div class="side-stat-label">Attempts</div>
+        </div>
+        <div class="side-stat">
+            <div class="side-stat-num">×{{ multiplier }}</div>
+            <div class="side-stat-label">Multiplier</div>
+        </div>
+        <div class="side-stat">
+            <div class="side-stat-num">5</div>
+            <div class="side-stat-label">Letters</div>
+        </div>
+    </div>
+
+    <!-- Center card -->
+    <div class="card">
+        <div class="card-title">How to Play</div>
+
+        <div class="color-guide">
+            <div class="guide-item">
+                <div class="guide-tile correct">W</div>
+                <div class="guide-label">Correct letter,<br>correct position</div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-tile present">I</div>
+                <div class="guide-label">Letter exists,<br>wrong position</div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-tile absent">X</div>
+                <div class="guide-label">Letter not<br>in the word</div>
+            </div>
+        </div>
+
+        <div class="rules-list">
+            <div class="rule-item">
+                <div class="rule-num">01</div>
+                <div class="rule-text">You will briefly see the word list — <strong>memorize it carefully</strong>. It disappears fast!</div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-num">02</div>
+                <div class="rule-text">Guess the <strong>secret 5-letter word</strong> from memory. You have <strong>{{ attempts }} attempts</strong>.</div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-num">03</div>
+                <div class="rule-text">Use the color feedback after each guess to narrow down the answer.</div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-num">04</div>
+                <div class="rule-text">Score = <strong>attempts remaining × 10 × {{ multiplier }}</strong>. Guess early for maximum points.</div>
+            </div>
+        </div>
+
+        <a class="start-btn" href="{% url 'play' %}">Begin Round →</a>
+    </div>
+
+    <!-- Right - empty deco space -->
+    <div class="side">
+        <div class="side-stat">
+            <div class="side-stat-num" style="font-size:28px; color:#00e6c3;">{{ attempts }}×10×{{ multiplier }}</div>
+            <div class="side-stat-label">Max Score</div>
+        </div>
+        <div class="side-stat" style="border-color: rgba(0,230,195,0.15);">
+            <div class="side-stat-num" style="font-size:28px; color:#00e6c3;">{{ attempts|add:0 }}</div>
+            <div class="side-stat-label">Lives</div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

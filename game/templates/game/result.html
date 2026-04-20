@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Game Result</title>
+{% load static %}
+
+<style>
+
+body{
+    margin:0;
+    font-family:"Segoe UI", Arial, sans-serif;
+
+    background-image:url("/static/images/mt.jpg");
+    background-size:cover;
+    background-position:center;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.result-box{
+
+    width:420px;
+    padding:45px;
+
+    background:rgba(8,10,20,0.92);
+
+    border-radius:16px;
+
+    border:1px solid rgba(124,108,255,0.5);
+
+    box-shadow:0 0 30px rgba(124,108,255,0.25);
+
+    text-align:center;
+    color:#e5e7eb;
+}
+
+.win{color:#00ff88;}
+.lose{color:#ff4d4d;}
+
+.word{
+    margin-top:12px;
+}
+
+.button-group{
+
+    margin-top:30px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    align-items:center;
+}
+
+.button-group a,
+.button-group button{
+
+    width:200px;
+    padding:12px;
+
+    font-size:16px;
+    font-weight:600;
+
+    background:linear-gradient(135deg,#7c6cff,#00e6c3);
+
+    color:white;
+
+    border:none;
+    border-radius:8px;
+
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.button-group button:hover,
+.button-group a:hover{
+    box-shadow:0 8px 18px rgba(124,108,255,0.35);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="result-box">
+
+{% if win %}
+<h1 class="win">🎉 You Won!</h1>
+<h2>Your Score: {{ score }}</h2>
+{% else %}
+<h1 class="lose">Game Over</h1>
+{% endif %}
+
+<div class="word">
+The Word Was: <b>{{ word|upper }}</b>
+</div>
+
+<div class="button-group">
+
+<a href="/">Play Again</a>
+
+<form action="{% url 'play' %}">
+<button type="submit">Next Round</button>
+</form>
+
+</div>
+
+</div>
+
+</body>
+</html>
